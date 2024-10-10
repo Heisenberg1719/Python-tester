@@ -22,4 +22,4 @@ ENV JWT_SECRET_KEY="your_jwt_secret_key_here"
 ENV FLASK_ENV="production"
 
 # Command to run the application
-CMD ["waitress-serve", "--host", "0.0.0.0", "--port", "5000", "app:app"]
+CMD ["waitress-serve", "--host", "0.0.0.0", "--port", "5000", "main:app"]
