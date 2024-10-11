@@ -19,6 +19,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=10)  # Access token e
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(hours=3)  # Refresh token expiration time
 app.config['JWT_COOKIE_CSRF_PROTECT'] = True  # CSRF protection for JWT cookies
 app.config['SESSION_COOKIE_SECURE'] = True  # Set secure flag for cookies in production
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)  # Session timeout after 15 minutes of inactivity
 
 jwt = JWTManager(app)
 
@@ -28,6 +29,12 @@ users_db = {
     'user2@example.com': {'password': generate_password_hash('password456')},
     'admin@example.com': {'password': generate_password_hash('adminpass')}
 }
+
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+    app.permanent_session_lifetime = timedelta(minutes=15)
+    session.modified = True  # Reset session timeout on each request
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -39,7 +46,8 @@ def login():
         return jsonify({'message': 'Invalid email or password.'}), 401
 
     # Clear any existing tokens from the session, create new tokens, and return them in cookies
-    [session.pop(token, None) for token in ('access_token', 'refresh_token') if token in session]
+    session['logged_in'] = True
+    session['user'] = email
     response = jsonify(message='Login successful.')
     response.set_cookie('access_token', create_access_token(identity=email, expires_delta=timedelta(minutes=10)), httponly=True, samesite='Strict', secure=True)
     response.set_cookie('refresh_token', create_refresh_token(identity=email, expires_delta=timedelta(hours=3)), httponly=True, samesite='Strict', secure=True)
@@ -80,6 +88,7 @@ def logout():
     identity = get_jwt_identity()
 
     # Clear session and cookies
+    session.clear()
     response = jsonify({'message': 'Logout successful.'})
     response.delete_cookie('access_token')
     response.delete_cookie('refresh_token')
@@ -90,6 +99,8 @@ def logout():
 @jwt_required()
 def protected():
     identity = get_jwt_identity()
+    if not session.get('logged_in'):
+        return jsonify({'message': 'Session expired, please log in again.'}), 401
     return jsonify({'message': f'Welcome {identity}! This is a protected route.'})
 
 @app.route('/', methods=['GET'])
