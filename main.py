@@ -14,7 +14,7 @@ CORS(app, supports_credentials=True)
 # Configuration
 app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))  # Secret key for Flask session
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", os.urandom(24))  # Secret key for JWT
-app.config['JWT_TOKEN_LOCATION'] = ['cookies', 'headers']  # Store JWT in cookies and headers
+app.config['JWT_TOKEN_LOCATION'] = ['cookies']  # Store JWT in cookies and headers
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=10)  # Access token expiration time
 app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(hours=3)  # Refresh token expiration time
 app.config['JWT_COOKIE_CSRF_PROTECT'] = True  # CSRF protection for JWT cookies
